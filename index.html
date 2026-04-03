@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How the Donor Compass Model Works: A Walkthrough</title>
+<style>
+  :root { --accent: #2E75B6; --bg: #f8f9fa; --card: #fff; --border: #dee2e6; --text: #212529; --muted: #6c757d; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: var(--text); line-height: 1.6; max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; background: var(--bg); }
+  h1 { font-size: 1.6rem; margin-bottom: 0.5rem; color: var(--accent); }
+  h2 { font-size: 1.25rem; margin: 2rem 0 0.75rem; color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 0.3rem; }
+  h3 { font-size: 1.05rem; margin: 1.2rem 0 0.5rem; }
+  p { margin-bottom: 0.8rem; }
+  .subtitle { color: var(--muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
+
+  .scenario { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem 1.5rem; margin: 1rem 0; }
+  .scenario-label { display: inline-block; background: var(--accent); color: white; font-size: 0.75rem; font-weight: 600; padding: 2px 10px; border-radius: 12px; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .result-bar-container { margin: 0.75rem 0; }
+  .result-row { display: flex; align-items: center; margin: 4px 0; font-size: 0.9rem; }
+  .result-label { width: 220px; flex-shrink: 0; }
+  .result-bar-bg { flex: 1; background: #e9ecef; border-radius: 4px; height: 24px; position: relative; }
+  .result-bar { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; color: white; font-size: 0.8rem; font-weight: 600; min-width: 40px; }
+  .bar-bio { background: #e67e22; }
+  .bar-nuclear { background: #c0392b; }
+  .bar-ai { background: #8e44ad; }
+  .bar-givewell { background: #27ae60; }
+  .bar-leaf { background: #2ecc71; }
+  .bar-awf { background: #3498db; }
+  .bar-navgen { background: #1abc9c; }
+  .bar-navcf { background: #16a085; }
+  .result-pct { width: 60px; text-align: right; font-size: 0.85rem; color: var(--muted); flex-shrink: 0; margin-left: 8px; }
+
+  details { margin: 0.75rem 0; }
+  summary { cursor: pointer; font-weight: 600; color: var(--accent); font-size: 0.9rem; padding: 0.4rem 0; }
+  summary:hover { text-decoration: underline; }
+  details > div { background: #f1f3f5; border-radius: 6px; padding: 1rem; margin-top: 0.5rem; font-size: 0.88rem; }
+
+  table.inputs { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin: 0.5rem 0; }
+  table.inputs th { background: #e9ecef; text-align: left; padding: 6px 10px; border: 1px solid var(--border); font-weight: 600; }
+  table.inputs td { padding: 5px 10px; border: 1px solid var(--border); }
+  table.inputs td.num { text-align: right; font-family: 'SF Mono', 'Consolas', monospace; }
+  table.inputs td.neg { text-align: right; font-family: 'SF Mono', 'Consolas', monospace; color: #c0392b; }
+
+  .rounds { font-size: 0.85rem; font-family: 'SF Mono', 'Consolas', monospace; line-height: 1.8; }
+  .rounds .round-bio { color: #e67e22; }
+  .rounds .round-nuclear { color: #c0392b; }
+  .rounds .round-givewell { color: #27ae60; }
+
+  .transition { text-align: center; margin: 1.5rem 0; font-size: 1.5rem; color: var(--accent); }
+
+  .takeaway { background: #ebf5fb; border-left: 4px solid var(--accent); padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; font-size: 0.92rem; }
+
+  .note { color: var(--muted); font-size: 0.85rem; font-style: italic; }
+
+  .formula { background: #f1f3f5; padding: 0.5rem 1rem; border-radius: 4px; font-family: 'SF Mono', 'Consolas', monospace; font-size: 0.85rem; margin: 0.5rem 0; display: inline-block; }
+</style>
+</head>
+<body>
+
+<h1>How the Donor Compass Model Works</h1>
+<p class="subtitle">A step-by-step walkthrough with real examples from the Cross-Cause Prioritization Model</p>
+
+<p>This document walks through the model underlying the Rethink Priorities Donor Compass and Cross-Cause Fund. It uses a series of concrete examples to show how worldview inputs translate into allocation recommendations, and how different modeling choices change the outcome.</p>
+
+<p>We assume you have read the methodology overview. This walkthrough shows the model in action.</p>
+
+<h2>Step 1: A single worldview, one allocation</h2>
+
+<p>We start with the simplest case: a single worldview with 100% credence and $10M to allocate. This worldview cares about humans across all time horizons (including the far future), is risk-neutral, and places no weight on animal welfare.</p>
+
+<div class="scenario">
+  <span class="scenario-label">Scenario 1</span>
+  <h3>$10M, human-focused longtermist, risk-neutral</h3>
+
+  <details>
+    <summary>View the full worldview inputs</summary>
+    <div>
+      <table class="inputs">
+        <tr><th colspan="2">Moral Weights</th></tr>
+        <tr><td>Human life-years</td><td class="num">1.0</td></tr>
+        <tr><td>Human YLDs</td><td class="num">0.8</td></tr>
+        <tr><td>Human income doublings</td><td class="num">0.3</td></tr>
+        <tr><td>Chickens/Birds</td><td class="num">0</td></tr>
+        <tr><td>Fish</td><td class="num">0</td></tr>
+        <tr><td>Shrimp</td><td class="num">0</td></tr>
+        <tr><td>Non-shrimp invertebrates</td><td class="num">0</td></tr>
+        <tr><td>Mammals</td><td class="num">0</td></tr>
+      </table>
+      <table class="inputs" style="margin-top:0.5rem;">
+        <tr><th>Time period</th><th>Discount factor</th></tr>
+        <tr><td>0 to 5 years</td><td class="num">1.00</td></tr>
+        <tr><td>5 to 10 years</td><td class="num">0.95</td></tr>
+        <tr><td>10 to 20 years</td><td class="num">0.85</td></tr>
+        <tr><td>20 to 100 years</td><td class="num">0.70</td></tr>
+        <tr><td>100 to 500 years</td><td class="num">0.50</td></tr>
+        <tr><td>500+ years</td><td class="num">0.10</td></tr>
+      </table>
+      <table class="inputs" style="margin-top:0.5rem;">
+        <tr><td>Risk profile</td><td class="num">Neutral (0)</td></tr>
+        <tr><td>Discount factor for non-AI risk interventions</td><td class="num">0</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <p>With these inputs, the model scores each fund. The biosecurity fund scores highest because its modeled effects include averting existential-scale catastrophes, which, when valued across all future generations, produces very large expected values. Even with a 0.10 discount on the 500+ year period, the scale of potential future lives preserved dominates all near-term effects.</p>
+
+  <details>
+    <summary>How does the model score a fund?</summary>
+    <div>
+      <p>Each fund's data contains one or more <strong>effects</strong> (e.g., human life-years saved, disability reduced, income doubled). Each effect has estimated values broken down by time period (0&ndash;5 years, 5&ndash;10 years, etc.) and risk profile column.</p>
+      <p>For a single effect, the score is:</p>
+      <p class="formula">score = moral_weight &times; &Sigma;<sub>t</sub>(value[t] &times; discount_factor[t])</p>
+      <p>The model looks up the value for the chosen risk profile column and each time period, multiplies by the corresponding discount factor, sums across all time periods, and then multiplies by the moral weight for that effect type. A fund's total score is the sum across all its effects.</p>
+      <p>For example, if GiveWell has an effect "lives saved" with values [11,706 ; 910 ; 325 ; 65 ; 0 ; 0] across the six time periods, and the discount factors are [1.0, 0.95, 0.85, 0.70, 0.50, 0.10], the contribution from that effect alone is:</p>
+      <p class="formula">1.0 &times; (11706&times;1.0 + 910&times;0.95 + 325&times;0.85 + 65&times;0.70 + 0 + 0) = 12,895</p>
+      <p>Add the contributions from its other effects (disability reduction, income improvement) and you get GiveWell's total score of about 20,024 under this worldview.</p>
+      <p>Funds focused on existential risk reduction have effects in the 500+ year column on the order of 10<sup>32</sup> human life-years (representing the value of all future generations if extinction is averted). Even multiplied by a discount of 0.10, this produces scores around 10<sup>31</sup>, which is why those funds dominate under risk-neutral assumptions.</p>
+    </div>
+  </details>
+
+  <div class="result-bar-container">
+    <div class="result-row">
+      <span class="result-label">Sentinel Bio (Biorisk)</span>
+      <div class="result-bar-bg"><div class="result-bar bar-bio" style="width:100%;">$10M</div></div>
+      <span class="result-pct">100%</span>
+    </div>
+  </div>
+
+  <div class="takeaway">The entire $10M goes to a single fund: the one with the highest marginal value under this worldview.</div>
+</div>
+
+<div class="transition">&#8595;</div>
+
+<h2>Step 2: Diminishing returns kick in</h2>
+
+<p>What happens when there is more money to allocate? Each fund has a diminishing returns curve built into the data. The idea is simple: the most impactful opportunities within a fund get funded first. As more money flows in, the next dollar achieves somewhat less. Eventually, a second fund becomes the better marginal use of money.</p>
+
+<p>We keep the exact same worldview but raise the budget to $100M.</p>
+
+<div class="scenario">
+  <span class="scenario-label">Scenario 2</span>
+  <h3>$100M, same worldview</h3>
+
+  <p>The model allocates in $10M increments. At each step, it recalculates marginal values accounting for how much each fund has already received.</p>
+
+  <details>
+    <summary>View the round-by-round allocation</summary>
+    <div>
+      <div class="rounds">
+        Round 1: $10M &rarr; <span class="round-bio">Sentinel Bio</span><br>
+        Round 2: $10M &rarr; <span class="round-nuclear">Nuclear fund (Longview)</span><br>
+        Round 3: $10M &rarr; <span class="round-bio">Sentinel Bio</span><br>
+        Round 4: $10M &rarr; <span class="round-nuclear">Nuclear fund (Longview)</span><br>
+        Round 5: $10M &rarr; <span class="round-bio">Sentinel Bio</span><br>
+        Round 6: $10M &rarr; <span class="round-nuclear">Nuclear fund (Longview)</span><br>
+        Round 7: $10M &rarr; <span class="round-bio">Sentinel Bio</span><br>
+        Round 8: $10M &rarr; <span class="round-bio">Sentinel Bio</span><br>
+        Round 9: $10M &rarr; <span class="round-nuclear">Nuclear fund (Longview)</span><br>
+        Round 10: $10M &rarr; <span class="round-bio">Sentinel Bio</span>
+      </div>
+    </div>
+  </details>
+
+  <div class="result-bar-container">
+    <div class="result-row">
+      <span class="result-label">Sentinel Bio (Biorisk)</span>
+      <div class="result-bar-bg"><div class="result-bar bar-bio" style="width:60%;">$60M</div></div>
+      <span class="result-pct">60%</span>
+    </div>
+    <div class="result-row">
+      <span class="result-label">Nuclear fund (Longview)</span>
+      <div class="result-bar-bg"><div class="result-bar bar-nuclear" style="width:40%;">$40M</div></div>
+      <span class="result-pct">40%</span>
+    </div>
+  </div>
+
+  <div class="takeaway">After the first $10M, diminishing returns make the biosecurity fund slightly less attractive. The nuclear safety fund, which has a similar base score, starts receiving allocations. The money alternates between the two as each one's marginal value decreases.</div>
+</div>
+
+<div class="transition">&#8595;</div>
+
+<h2>Step 3: Changing the risk profile</h2>
+
+<p>So far we have used a risk-neutral profile: the model simply takes the expected value of each fund's impact distribution. But what if you are skeptical of the most optimistic scenarios?</p>
+
+<p>The "Continuous Upside Sceptical" risk profile downweights the upper tail of each fund's impact distribution. For global catastrophic risk funds, the upside scenarios are where most of the expected value lives. When you discount those, the picture changes dramatically.</p>
+
+<details>
+  <summary>What does "Continuous Upside Sceptical" do, exactly?</summary>
+  <div>
+    <p>We could just say "don't count effects above the 99th percentile." Instead, we use a continuous function that starts dropping off from the 97.5th percentile and exponentially decays to zero at the 99.9th percentile, to avoid an arbitrary discontinuous jump in what outcomes are and aren't valued.</p>
+    <p>Specifically, outcomes up to the 97.5th percentile of the impact distribution receive full weight. Above that, the weight decays exponentially, falling to 1% at the 99th percentile and reaching zero by the 99.9th percentile. The formula for the weight between the 97.5th and 99.9th percentile is:</p>
+    <p class="formula">weight = e<sup> &minus;ln(100) &frasl; 1.5 &times; (p &minus; 97.5)</sup></p>
+    <p>The average weight of all values standardizes this weight. In practice, this nearly eliminates the contribution of extremely high-end outcomes while leaving the bulk of the distribution untouched.</p>
+    <p>For GCR funds, the enormous expected values (10<sup>31</sup>+) come almost entirely from the upper tail. Once those are discounted, the remaining expected value can turn negative. For GiveWell, whose impact distribution is much tighter, the upper tail barely differs from the median, so discounting it has almost no effect on the score.</p>
+  </div>
+</details>
+
+<div class="scenario">
+  <span class="scenario-label">Scenario 3</span>
+  <h3>$10M, same moral weights and discounts, but "Continuous Upside Sceptical"</h3>
+
+  <details>
+    <summary>View the changed input</summary>
+    <div>
+      <p>Everything is the same as Scenario 1 except:</p>
+      <table class="inputs">
+        <tr><td>Risk profile</td><td class="num">Continuous Upside Sceptical (7)</td></tr>
+      </table>
+      <p style="margin-top:0.5rem;">This single change flips the sign on the GCR funds. Under this risk profile, the far-future extinction effects become <em>negative</em> (the model interprets the most likely outcome as slightly harmful rather than hugely beneficial). Meanwhile, GiveWell's near-term, evidence-backed effects are largely unaffected.</p>
+    </div>
+  </details>
+
+  <div class="result-bar-container">
+    <div class="result-row">
+      <span class="result-label">GiveWell</span>
+      <div class="result-bar-bg"><div class="result-bar bar-givewell" style="width:100%;">$10M</div></div>
+      <span class="result-pct">100%</span>
+    </div>
+  </div>
+
+  <details>
+    <summary>View the fund scores: Neutral vs. Continuous Upside Sceptical</summary>
+    <div>
+      <table class="inputs">
+        <tr><th>Fund</th><th>Neutral</th><th>Upside Sceptical</th></tr>
+        <tr><td>Sentinel Bio</td><td class="num">1.12 &times; 10<sup>31</sup></td><td class="neg">&minus;5.18 &times; 10<sup>29</sup></td></tr>
+        <tr><td>Nuclear fund</td><td class="num">1.11 &times; 10<sup>31</sup></td><td class="neg">&minus;5.21 &times; 10<sup>29</sup></td></tr>
+        <tr><td>AI fund</td><td class="num">1.10 &times; 10<sup>30</sup></td><td class="neg">&minus;2.71 &times; 10<sup>31</sup></td></tr>
+        <tr><td>GiveWell</td><td class="num">20,024</td><td class="num">19,796</td></tr>
+        <tr><td>LEAF</td><td class="num">18,689</td><td class="num">16,994</td></tr>
+      </table>
+      <p class="note" style="margin-top:0.5rem;">Animal welfare funds score zero because this worldview assigns zero weight to animal effects. GiveWell's score barely changes between risk profiles because its impact distribution is tight (the upper tail is close to the median, so discounting it makes little difference).</p>
+    </div>
+  </details>
+
+  <div class="takeaway">A single input change (the risk profile) completely reverses the recommendation. The GCR funds go from the top of the ranking to negative scores. GiveWell, with its well-evidenced near-term effects, becomes the clear winner. This illustrates how sensitive cause prioritization decisions are to assumptions about risk.</div>
+</div>
+
+<div class="transition">&#8595;</div>
+
+<h2>Step 4: Merging worldviews</h2>
+
+<p>In practice, you might not be fully committed to either risk profile. Perhaps you think there is an 80% chance the upside-skeptical view is right and a 20% chance the risk-neutral view is right. The model handles this by treating each view as a separate worldview with its own credence.</p>
+
+<p>There are different ways to combine these views. We show two aggregation methods here: credence-weighted and Maximize Expected Choiceworthiness (MEC).</p>
+
+<div class="scenario">
+  <span class="scenario-label">Scenario 4a</span>
+  <h3>$10M, credence-weighted aggregation (80% upside skeptical / 20% longtermist)</h3>
+
+  <details>
+    <summary>View the worldview setup</summary>
+    <div>
+      <table class="inputs">
+        <tr><th>Worldview</th><th>Credence</th><th>Risk Profile</th><th>Other inputs</th></tr>
+        <tr><td>Human-focused longtermist</td><td class="num">20%</td><td class="num">Neutral (0)</td><td>Same as Scenario 1</td></tr>
+        <tr><td>Human-focused, upside skeptical</td><td class="num">80%</td><td class="num">Continuous Upside Sceptical (7)</td><td>Same moral weights &amp; discounts</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <p>With credence-weighted aggregation, each worldview gets to allocate its share of each $10M increment. At 80/20 credence, the upside-skeptical worldview directs $8M and the longtermist worldview directs $2M.</p>
+
+  <div class="result-bar-container">
+    <div class="result-row">
+      <span class="result-label">GiveWell</span>
+      <div class="result-bar-bg"><div class="result-bar bar-givewell" style="width:80%;">$8M</div></div>
+      <span class="result-pct">80%</span>
+    </div>
+    <div class="result-row">
+      <span class="result-label">Sentinel Bio (Biorisk)</span>
+      <div class="result-bar-bg"><div class="result-bar bar-bio" style="width:20%;">$2M</div></div>
+      <span class="result-pct">20%</span>
+    </div>
+  </div>
+
+  <div class="takeaway">The budget splits in proportion to the credences. Each worldview picks its own top fund independently.</div>
+</div>
+
+<div class="scenario">
+  <span class="scenario-label">Scenario 4b</span>
+  <h3>$10M, MEC aggregation (same 80/20 worldviews)</h3>
+
+  <p>MEC (Maximize Expected Choiceworthiness) works differently. Instead of letting each worldview allocate independently, it computes a single weighted-average score across all worldviews and puts the entire increment into whichever fund scores highest overall.</p>
+
+  <div class="result-bar-container">
+    <div class="result-row">
+      <span class="result-label">Sentinel Bio (Biorisk)</span>
+      <div class="result-bar-bg"><div class="result-bar bar-bio" style="width:100%;">$10M</div></div>
+      <span class="result-pct">100%</span>
+    </div>
+  </div>
+
+  <p>Despite holding only 20% credence, the longtermist worldview's scores are so astronomically large (10<sup>31</sup>) that even after multiplying by 0.2, they still overwhelm the skeptical worldview's scores (on the order of 10<sup>4</sup>). The 80% credence on the skeptical side makes no practical difference.</p>
+
+  <div class="takeaway">We do not recommend MEC as a primary aggregation method. It is vulnerable to a form of "fanaticism": a worldview with a small credence but extremely large or uncertain value estimates can overpower all other worldviews in the weighted average. This means a 20% credence on speculative far-future outcomes can completely dominate an 80% credence on well-evidenced near-term interventions. Credence-weighted aggregation avoids this by giving each worldview proportional control rather than mixing their scores.</div>
+</div>
+
+<div class="transition">&#8595;</div>
+
+<h2>Step 5: Merging at larger scale</h2>
+
+<p>Now we scale up to $100M with the same 80/20 credence split, using credence-weighted aggregation. Diminishing returns interact with the credence split.</p>
+
+<div class="scenario">
+  <span class="scenario-label">Scenario 5</span>
+  <h3>$100M, credence-weighted, 80% upside skeptical / 20% longtermist</h3>
+
+  <details>
+    <summary>View the round-by-round allocation</summary>
+    <div>
+      <div class="rounds">
+        Round 1: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-bio">$2M &rarr; Sentinel Bio</span><br>
+        Round 2: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-bio">$2M &rarr; Sentinel Bio</span><br>
+        Round 3: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-bio">$2M &rarr; Sentinel Bio</span><br>
+        Round 4: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-bio">$2M &rarr; Sentinel Bio</span><br>
+        Round 5: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-bio">$2M &rarr; Sentinel Bio</span><br>
+        Round 6: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-nuclear">$2M &rarr; Nuclear fund</span><br>
+        Round 7: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-nuclear">$2M &rarr; Nuclear fund</span><br>
+        Round 8: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-nuclear">$2M &rarr; Nuclear fund</span><br>
+        Round 9: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-nuclear">$2M &rarr; Nuclear fund</span><br>
+        Round 10: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-nuclear">$2M &rarr; Nuclear fund</span>
+      </div>
+    </div>
+  </details>
+
+  <div class="result-bar-container">
+    <div class="result-row">
+      <span class="result-label">GiveWell</span>
+      <div class="result-bar-bg"><div class="result-bar bar-givewell" style="width:80%;">$80M</div></div>
+      <span class="result-pct">80%</span>
+    </div>
+    <div class="result-row">
+      <span class="result-label">Sentinel Bio (Biorisk)</span>
+      <div class="result-bar-bg"><div class="result-bar bar-bio" style="width:10%;">$10M</div></div>
+      <span class="result-pct">10%</span>
+    </div>
+    <div class="result-row">
+      <span class="result-label">Nuclear fund (Longview)</span>
+      <div class="result-bar-bg"><div class="result-bar bar-nuclear" style="width:10%;">$10M</div></div>
+      <span class="result-pct">10%</span>
+    </div>
+  </div>
+
+  <div class="takeaway">The upside-skeptical worldview (80% credence) keeps sending all its money to GiveWell, which is still robustly the best option at this scale after accounting for diminishing returns. The longtermist worldview (20% credence) splits its allocation between biosecurity and nuclear as diminishing returns force diversification. The result: a portfolio dominated by near-term giving but with a meaningful longtermist hedge, driven by genuine moral uncertainty rather than arbitrary splitting.</div>
+</div>
+
+<h2>Summary</h2>
+
+<p>These scenarios illustrate the core mechanics of the model:</p>
+
+<div class="scenario" style="background:#ebf5fb; border-color:var(--accent);">
+
+  <p><strong>Scoring:</strong> Each fund gets a score based on its modeled effects, multiplied by the worldview's moral weights and discount factors, then collapsed by the chosen risk profile.</p>
+
+  <p><strong>Diminishing returns:</strong> The model allocates in increments. Each increment goes to whichever fund has the highest <em>marginal</em> value at that point. As a fund receives more, its marginal value drops, eventually letting other funds compete.</p>
+
+  <p><strong>Risk profiles:</strong> The choice of risk profile can completely change which funds score highest. Risk-neutral views tend to favor GCR funds (whose upside is enormous but uncertain); upside-skeptical views tend to favor GiveWell (whose impact is smaller but more certain).</p>
+
+  <p><strong>Worldview aggregation:</strong> When you hold multiple worldviews, the aggregation method matters. Credence-weighted aggregation gives each worldview proportional control over the allocation. Other methods like MEC combine scores into a single average, which can allow worldviews with extreme value estimates to dominate even at low credences.</p>
+</div>
+
+<p class="note">All numbers in this document were generated by the Donor Compass Advanced Mode model using the March 31, 2026 dataset. The primary aggregation method shown is credence-weighted; eight other methods are available and can produce different results when multiple worldviews disagree.</p>
+
+</body>
+</html>
