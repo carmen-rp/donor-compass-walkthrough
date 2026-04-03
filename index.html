@@ -3,136 +3,223 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>How the Donor Compass Model Works: A Walkthrough</title>
+<title>Donor Compass: How the Model Works</title>
 <style>
-  :root { --accent: #2E75B6; --bg: #f8f9fa; --card: #fff; --border: #dee2e6; --text: #212529; --muted: #6c757d; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: var(--text); line-height: 1.6; max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; background: var(--bg); }
-  h1 { font-size: 1.6rem; margin-bottom: 0.5rem; color: var(--accent); }
-  h2 { font-size: 1.25rem; margin: 2rem 0 0.75rem; color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 0.3rem; }
-  h3 { font-size: 1.05rem; margin: 1.2rem 0 0.5rem; }
-  p { margin-bottom: 0.8rem; }
-  .subtitle { color: var(--muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f5f4f0;
+  color: #1a1a1a;
+  padding: 40px 24px;
+  max-width: 860px;
+  margin: 0 auto;
+  line-height: 1.65;
+  font-size: 0.95rem;
+}
 
-  .scenario { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem 1.5rem; margin: 1rem 0; }
-  .scenario-label { display: inline-block; background: var(--accent); color: white; font-size: 0.75rem; font-weight: 600; padding: 2px 10px; border-radius: 12px; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+/* ── Logo & Title ────────────────────────────────────────────────── */
+.logo { margin-bottom: 24px; }
+.logo img { height: 48px; filter: brightness(0) saturate(100%) invert(38%) sepia(50%) saturate(600%) hue-rotate(164deg) brightness(85%) contrast(90%); }
+h1 { font-size: 1.6rem; font-weight: 700; color: #2e718f; margin-bottom: 6px; }
+.subtitle { font-size: 0.95rem; color: #555; margin-bottom: 8px; font-weight: 600; }
+.intro { font-size: 0.9rem; color: #444; margin-bottom: 8px; line-height: 1.6; }
+.intro a { color: #2e718f; text-decoration: underline; }
 
-  .result-bar-container { margin: 0.75rem 0; }
-  .result-row { display: flex; align-items: center; margin: 4px 0; font-size: 0.9rem; }
-  .result-label { width: 220px; flex-shrink: 0; }
-  .result-bar-bg { flex: 1; background: #e9ecef; border-radius: 4px; height: 24px; position: relative; }
-  .result-bar { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; color: white; font-size: 0.8rem; font-weight: 600; min-width: 40px; }
-  .bar-bio { background: #e67e22; }
-  .bar-nuclear { background: #c0392b; }
-  .bar-ai { background: #8e44ad; }
-  .bar-givewell { background: #27ae60; }
-  .bar-leaf { background: #2ecc71; }
-  .bar-awf { background: #3498db; }
-  .bar-navgen { background: #1abc9c; }
-  .bar-navcf { background: #16a085; }
-  .result-pct { width: 60px; text-align: right; font-size: 0.85rem; color: var(--muted); flex-shrink: 0; margin-left: 8px; }
+/* ── Steps ───────────────────────────────────────────────────────── */
+h2 {
+  font-size: 1.2rem; font-weight: 700; color: #2e718f;
+  margin-top: 48px; margin-bottom: 16px;
+  padding-bottom: 6px; border-bottom: 2px solid #2e718f;
+}
+h3 { font-size: 1.05rem; font-weight: 700; color: #0c3e60; margin: 20px 0 10px; }
+h4 { font-size: 0.95rem; font-weight: 700; color: #0c3e60; margin: 16px 0 8px; }
 
-  details { margin: 0.75rem 0; }
-  summary { cursor: pointer; font-weight: 600; color: var(--accent); font-size: 0.9rem; padding: 0.4rem 0; }
-  summary:hover { text-decoration: underline; }
-  details > div { background: #f1f3f5; border-radius: 6px; padding: 1rem; margin-top: 0.5rem; font-size: 0.88rem; }
+.scenario {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.scenario-label {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: #2e718f; margin-bottom: 6px;
+}
 
-  table.inputs { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin: 0.5rem 0; }
-  table.inputs th { background: #e9ecef; text-align: left; padding: 6px 10px; border: 1px solid var(--border); font-weight: 600; }
-  table.inputs td { padding: 5px 10px; border: 1px solid var(--border); }
-  table.inputs td.num { text-align: right; font-family: 'SF Mono', 'Consolas', monospace; }
-  table.inputs td.neg { text-align: right; font-family: 'SF Mono', 'Consolas', monospace; color: #c0392b; }
+p { margin-bottom: 14px; }
 
-  .rounds { font-size: 0.85rem; font-family: 'SF Mono', 'Consolas', monospace; line-height: 1.8; }
-  .rounds .round-bio { color: #e67e22; }
-  .rounds .round-nuclear { color: #c0392b; }
-  .rounds .round-givewell { color: #27ae60; }
+/* ── Tables ──────────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 14px 0; }
+th {
+  text-align: left; padding: 8px 10px; background: #e4eff5;
+  font-weight: 700; color: #0c3e60; font-size: 0.8rem;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+td { padding: 9px 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
 
-  .transition { text-align: center; margin: 1.5rem 0; font-size: 1.5rem; color: var(--accent); }
+/* ── Allocation bars ─────────────────────────────────────────────── */
+.alloc-bar { display: flex; flex-direction: column; gap: 6px; margin: 16px 0 10px; }
+.alloc-segment {
+  display: flex; align-items: center;
+  font-weight: 700; font-size: 0.82rem;
+  padding: 8px 12px; white-space: nowrap; border-radius: 6px;
+  height: 36px; color: #1a1a1a;
+}
+.bar-bio { background: #3498db; }
+.bar-nuc { background: #e74c3c; }
+.bar-gw  { background: #27ae60; }
+.bar-ai  { background: #8e44ad; }
+.bar-leaf { background: #f39c12; }
+.bar-aw { background: #16a085; }
 
-  .takeaway { background: #ebf5fb; border-left: 4px solid var(--accent); padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; font-size: 0.92rem; }
+.alloc-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; font-size: 0.84rem; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
-  .note { color: var(--muted); font-size: 0.85rem; font-style: italic; }
+/* ── Details/summary ─────────────────────────────────────────────── */
+details { margin: 14px 0; }
+summary {
+  cursor: pointer; font-size: 0.86rem; font-weight: 600;
+  color: #2e718f; padding: 6px 0; list-style: none;
+  display: flex; align-items: center; gap: 6px; user-select: none;
+}
+summary::-webkit-details-marker { display: none; }
+summary::before { content: '▶'; font-size: 0.6rem; color: #7ab0c4; transition: transform 0.15s; }
+details[open] summary::before { transform: rotate(90deg); }
+.details-content {
+  margin-top: 8px; padding: 14px 16px;
+  background: #f8f7f4; border-radius: 8px; border: 1px solid #eae9e4;
+}
 
-  .formula { background: #f1f3f5; padding: 0.5rem 1rem; border-radius: 4px; font-family: 'SF Mono', 'Consolas', monospace; font-size: 0.85rem; margin: 0.5rem 0; display: inline-block; }
+/* ── Insight / warning boxes ─────────────────────────────────────── */
+.insight {
+  background: #f0f7fb; border-left: 3px solid #2e718f;
+  padding: 12px 16px; border-radius: 0 6px 6px 0;
+  font-size: 0.88rem; color: #333; margin: 14px 0; line-height: 1.6;
+}
+.warning {
+  background: #fef5e7; border-left: 3px solid #e67e22;
+  padding: 12px 16px; border-radius: 0 6px 6px 0;
+  font-size: 0.88rem; color: #333; margin: 14px 0; line-height: 1.6;
+}
+
+/* ── Arrow connector ─────────────────────────────────────────────── */
+.arrow-down { text-align: center; font-size: 1.5rem; color: #bbb; margin: 10px 0; }
+
+/* ── Formula ─────────────────────────────────────────────────────── */
+.formula {
+  background: #f8f7f4; padding: 10px 16px; border-radius: 6px;
+  font-family: 'Courier New', monospace; font-size: 0.9rem;
+  margin: 10px 0 14px; text-align: center; color: #333;
+}
+
+/* ── Score comparison ────────────────────────────────────────────── */
+.neg { color: #c0392b; }
+
+/* ── Summary section ─────────────────────────────────────────────── */
+.summary-section { margin-top: 40px; padding-top: 24px; border-top: 2px solid #2e718f; }
+.summary-section h2 { margin-top: 0; border-bottom: none; }
+
+.footer-note {
+  font-size: 0.82rem; color: #888; font-style: italic;
+  margin-top: 32px; padding-top: 16px; border-top: 1px solid #ddd;
+}
+
+@media (max-width: 620px) {
+  body { padding: 20px 14px; }
+  .alloc-segment { font-size: 0.7rem; min-width: 0; }
+}
 </style>
 </head>
 <body>
 
+<div class="logo"><img src="data:image/png;base64,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" alt="Rethink Priorities"></div>
+
 <h1>How the Donor Compass Model Works</h1>
 <p class="subtitle">A step-by-step walkthrough with real examples from the Cross-Cause Prioritization Model</p>
+<p class="intro">This document walks through the model underlying the Rethink Priorities Donor Compass and Cross-Cause Fund. It uses a series of concrete examples to show how worldview inputs translate into allocation recommendations, and how different modeling choices change the outcome.</p>
+<p class="intro">We assume you have read the <a href="https://docs.google.com/document/d/1SnYcPUnH_CajebBX3ZIRdU9IWeSmw9LOJ-6b4G8PeBM/edit?tab=t.qf1ldai13i0t">methodology overview</a>. This walkthrough shows the model in action.</p>
 
-<p>This document walks through the model underlying the Rethink Priorities Donor Compass and Cross-Cause Fund. It uses a series of concrete examples to show how worldview inputs translate into allocation recommendations, and how different modeling choices change the outcome.</p>
 
-<p>We assume you have read the methodology overview. This walkthrough shows the model in action.</p>
-
+<!-- ═══════════ STEP 1 ═══════════ -->
 <h2>Step 1: A single worldview, one allocation</h2>
 
 <p>We start with the simplest case: a single worldview with 100% credence and $10M to allocate. This worldview cares about humans across all time horizons (including the far future), is risk-neutral, and places no weight on animal welfare.</p>
 
+
 <div class="scenario">
-  <span class="scenario-label">Scenario 1</span>
-  <h3>$10M, human-focused longtermist, risk-neutral</h3>
+<div class="scenario-label">Scenario 1</div>
+<h3>$10M, human-focused longtermist, risk-neutral</h3>
 
-  <details>
-    <summary>View the full worldview inputs</summary>
-    <div>
-      <table class="inputs">
-        <tr><th colspan="2">Moral Weights</th></tr>
-        <tr><td>Human life-years</td><td class="num">1.0</td></tr>
-        <tr><td>Human YLDs</td><td class="num">0.8</td></tr>
-        <tr><td>Human income doublings</td><td class="num">0.3</td></tr>
-        <tr><td>Chickens/Birds</td><td class="num">0</td></tr>
-        <tr><td>Fish</td><td class="num">0</td></tr>
-        <tr><td>Shrimp</td><td class="num">0</td></tr>
-        <tr><td>Non-shrimp invertebrates</td><td class="num">0</td></tr>
-        <tr><td>Mammals</td><td class="num">0</td></tr>
-      </table>
-      <table class="inputs" style="margin-top:0.5rem;">
-        <tr><th>Time period</th><th>Discount factor</th></tr>
-        <tr><td>0 to 5 years</td><td class="num">1.00</td></tr>
-        <tr><td>5 to 10 years</td><td class="num">0.95</td></tr>
-        <tr><td>10 to 20 years</td><td class="num">0.85</td></tr>
-        <tr><td>20 to 100 years</td><td class="num">0.70</td></tr>
-        <tr><td>100 to 500 years</td><td class="num">0.50</td></tr>
-        <tr><td>500+ years</td><td class="num">0.10</td></tr>
-      </table>
-      <table class="inputs" style="margin-top:0.5rem;">
-        <tr><td>Risk profile</td><td class="num">Neutral (0)</td></tr>
-        <tr><td>Discount factor for non-AI risk interventions</td><td class="num">0</td></tr>
-      </table>
-    </div>
-  </details>
+<details>
+<summary>View the full worldview inputs</summary>
+<div class="details-content">
+<table>
+<tr><th colspan="2">Moral Weights</th></tr>
+<tr><td>Human life-years</td><td>1.0</td></tr>
+<tr><td>Human YLDs</td><td>0.8</td></tr>
+<tr><td>Human income doublings</td><td>0.3</td></tr>
+<tr><td>Chickens/Birds</td><td>0</td></tr>
+<tr><td>Fish</td><td>0</td></tr>
+<tr><td>Shrimp</td><td>0</td></tr>
+<tr><td>Non-shrimp invertebrates</td><td>0</td></tr>
+<tr><td>Mammals</td><td>0</td></tr>
+</table>
 
-  <p>With these inputs, the model scores each fund. The biosecurity fund scores highest because its modeled effects include averting existential-scale catastrophes, which, when valued across all future generations, produces very large expected values. Even with a 0.10 discount on the 500+ year period, the scale of potential future lives preserved dominates all near-term effects.</p>
+<table>
+<tr><th>Time period</th><th>Discount factor</th></tr>
+<tr><td>0 to 5 years</td><td>1.00</td></tr>
+<tr><td>5 to 10 years</td><td>0.95</td></tr>
+<tr><td>10 to 20 years</td><td>0.85</td></tr>
+<tr><td>20 to 100 years</td><td>0.70</td></tr>
+<tr><td>100 to 500 years</td><td>0.50</td></tr>
+<tr><td>500+ years</td><td>0.10</td></tr>
+</table>
 
-  <details>
-    <summary>How does the model score a fund?</summary>
-    <div>
-      <p>Each fund's data contains one or more <strong>effects</strong> (e.g., human life-years saved, disability reduced, income doubled). Each effect has estimated values broken down by time period (0&ndash;5 years, 5&ndash;10 years, etc.) and risk profile column.</p>
-      <p>For a single effect, the score is:</p>
-      <p class="formula">score = moral_weight &times; &Sigma;<sub>t</sub>(value[t] &times; discount_factor[t])</p>
-      <p>The model looks up the value for the chosen risk profile column and each time period, multiplies by the corresponding discount factor, sums across all time periods, and then multiplies by the moral weight for that effect type. A fund's total score is the sum across all its effects.</p>
-      <p>For example, if GiveWell has an effect "lives saved" with values [11,706 ; 910 ; 325 ; 65 ; 0 ; 0] across the six time periods, and the discount factors are [1.0, 0.95, 0.85, 0.70, 0.50, 0.10], the contribution from that effect alone is:</p>
-      <p class="formula">1.0 &times; (11706&times;1.0 + 910&times;0.95 + 325&times;0.85 + 65&times;0.70 + 0 + 0) = 12,895</p>
-      <p>Add the contributions from its other effects (disability reduction, income improvement) and you get GiveWell's total score of about 20,024 under this worldview.</p>
-      <p>Funds focused on existential risk reduction have effects in the 500+ year column on the order of 10<sup>32</sup> human life-years (representing the value of all future generations if extinction is averted). Even multiplied by a discount of 0.10, this produces scores around 10<sup>31</sup>, which is why those funds dominate under risk-neutral assumptions.</p>
-    </div>
-  </details>
+<table>
+<tr><td>Risk profile</td><td>Neutral (0)</td></tr>
+<tr><td>Discount factor for non-AI risk interventions</td><td>0</td></tr>
+</table>
+</div>
+</details>
 
-  <div class="result-bar-container">
-    <div class="result-row">
-      <span class="result-label">Sentinel Bio (Biorisk)</span>
-      <div class="result-bar-bg"><div class="result-bar bar-bio" style="width:100%;">$10M</div></div>
-      <span class="result-pct">100%</span>
-    </div>
-  </div>
+<p>With these inputs, the model scores each fund. The biosecurity fund scores highest because its modeled effects include averting existential-scale catastrophes, which, when valued across all future generations, produce very large expected values. Even with a 0.10 discount over the 500+-year period, the scale of potential future lives preserved outweighs all near-term effects.</p>
 
-  <div class="takeaway">The entire $10M goes to a single fund: the one with the highest marginal value under this worldview.</div>
+<details>
+<summary>How does the model score a fund?</summary>
+<div class="details-content">
+<p>Each fund's data contains one or more <strong>effects</strong> (e.g., human life-years saved, disability reduced, income doubled). Each effect has estimated values broken down by time period (0–5 years, 5–10 years, etc.) and risk profile column.</p>
+
+<p>For a single effect, the score is:</p>
+<div class="formula">score = moral_weight × Σ<sub>t</sub>(value[t] × discount_factor[t])</div>
+
+<p>The model looks up the value for the chosen risk profile column and each time period, multiplies by the corresponding discount factor, sums across all time periods, and then multiplies by the moral weight for that effect type. A fund's total score is the sum across all its effects.</p>
+
+<p>For example, if GiveWell has an effect "lives saved" with values [11,706; 910; 325; 65; 0; 0] across the six time periods, and the discount factors are [1.0, 0.95, 0.85, 0.70, 0.50, 0.10], the contribution from that effect alone is:</p>
+<div class="formula">1.0 × (11706×1.0 + 910×0.95 + 325×0.85 + 65×0.70 + 0 + 0) = 12,895</div>
+
+<p>Add the contributions from its other effects (disability reduction, income improvement), and you get GiveWell's total score of about 20,024 under this worldview.</p>
+
+<p>Funds focused on existential risk reduction have effects in the 500+ year column on the order of 10<sup>32</sup> human life-years (representing the value of all future generations if extinction is averted). Even multiplied by a discount of 0.10, this produces scores around 10<sup>31</sup>, which is why those funds dominate under risk-neutral assumptions.</p>
+</div>
+</details>
+
+<div class="alloc-bar">
+  <div class="alloc-segment bar-bio" style="width:100%">Sentinel Bio $10M (100%)</div>
 </div>
 
-<div class="transition">&#8595;</div>
+<p>The entire $10M goes to a single fund: the one with the highest marginal value under this worldview.</p>
 
+<div class="insight"><strong>A note on GCR funds:</strong> This is an illustrative example. Our recommended allocation groups AI safety, biosecurity, and nuclear risk together as a global catastrophic risk (GCR) cluster. Within this cluster, we currently cannot pin down the split across individual funds with confidence.</div>
+
+<div class="insight"><strong>A note on animal welfare weights:</strong> These scenarios assign zero moral weight to animals for the sake of simplicity. We strongly advise against this in practice. Even if you are highly uncertain about animal sentience or moral status, assigning literally zero weight means that no amount of animal suffering can ever count, which is a very strong claim. The full model includes animal welfare moral weights, and including even modest values can shift allocations substantially toward animal welfare funds.</div>
+</div>
+
+<div class="arrow-down">↓</div>
+
+
+<!-- ═══════════ STEP 2 ═══════════ -->
 <h2>Step 2: Diminishing returns kick in</h2>
 
 <p>What happens when there is more money to allocate? Each fund has a diminishing returns curve built into the data. The idea is simple: the most impactful opportunities within a fund get funded first. As more money flows in, the next dollar achieves somewhat less. Eventually, a second fund becomes the better marginal use of money.</p>
@@ -140,107 +227,107 @@
 <p>We keep the exact same worldview but raise the budget to $100M.</p>
 
 <div class="scenario">
-  <span class="scenario-label">Scenario 2</span>
-  <h3>$100M, same worldview</h3>
+<div class="scenario-label">Scenario 2</div>
+<h3>$100M, same worldview</h3>
 
-  <p>The model allocates in $10M increments. At each step, it recalculates marginal values accounting for how much each fund has already received.</p>
-
-  <details>
-    <summary>View the round-by-round allocation</summary>
-    <div>
-      <div class="rounds">
-        Round 1: $10M &rarr; <span class="round-bio">Sentinel Bio</span><br>
-        Round 2: $10M &rarr; <span class="round-nuclear">Nuclear fund (Longview)</span><br>
-        Round 3: $10M &rarr; <span class="round-bio">Sentinel Bio</span><br>
-        Round 4: $10M &rarr; <span class="round-nuclear">Nuclear fund (Longview)</span><br>
-        Round 5: $10M &rarr; <span class="round-bio">Sentinel Bio</span><br>
-        Round 6: $10M &rarr; <span class="round-nuclear">Nuclear fund (Longview)</span><br>
-        Round 7: $10M &rarr; <span class="round-bio">Sentinel Bio</span><br>
-        Round 8: $10M &rarr; <span class="round-bio">Sentinel Bio</span><br>
-        Round 9: $10M &rarr; <span class="round-nuclear">Nuclear fund (Longview)</span><br>
-        Round 10: $10M &rarr; <span class="round-bio">Sentinel Bio</span>
-      </div>
-    </div>
-  </details>
-
-  <div class="result-bar-container">
-    <div class="result-row">
-      <span class="result-label">Sentinel Bio (Biorisk)</span>
-      <div class="result-bar-bg"><div class="result-bar bar-bio" style="width:60%;">$60M</div></div>
-      <span class="result-pct">60%</span>
-    </div>
-    <div class="result-row">
-      <span class="result-label">Nuclear fund (Longview)</span>
-      <div class="result-bar-bg"><div class="result-bar bar-nuclear" style="width:40%;">$40M</div></div>
-      <span class="result-pct">40%</span>
-    </div>
-  </div>
-
-  <div class="takeaway">After the first $10M, diminishing returns make the biosecurity fund slightly less attractive. The nuclear safety fund, which has a similar base score, starts receiving allocations. The money alternates between the two as each one's marginal value decreases.</div>
-</div>
-
-<div class="transition">&#8595;</div>
-
-<h2>Step 3: Changing the risk profile</h2>
-
-<p>So far we have used a risk-neutral profile: the model simply takes the expected value of each fund's impact distribution. But what if you are skeptical of the most optimistic scenarios?</p>
-
-<p>The "Continuous Upside Sceptical" risk profile downweights the upper tail of each fund's impact distribution. For global catastrophic risk funds, the upside scenarios are where most of the expected value lives. When you discount those, the picture changes dramatically.</p>
+<p>The model allocates in $10M increments. At each step, it recalculates marginal values accounting for how much each fund has already received.</p>
 
 <details>
-  <summary>What does "Continuous Upside Sceptical" do, exactly?</summary>
-  <div>
-    <p>We could just say "don't count effects above the 99th percentile." Instead, we use a continuous function that starts dropping off from the 97.5th percentile and exponentially decays to zero at the 99.9th percentile, to avoid an arbitrary discontinuous jump in what outcomes are and aren't valued.</p>
-    <p>Specifically, outcomes up to the 97.5th percentile of the impact distribution receive full weight. Above that, the weight decays exponentially, falling to 1% at the 99th percentile and reaching zero by the 99.9th percentile. The formula for the weight between the 97.5th and 99.9th percentile is:</p>
-    <p class="formula">weight = e<sup> &minus;ln(100) &frasl; 1.5 &times; (p &minus; 97.5)</sup></p>
-    <p>The average weight of all values standardizes this weight. In practice, this nearly eliminates the contribution of extremely high-end outcomes while leaving the bulk of the distribution untouched.</p>
-    <p>For GCR funds, the enormous expected values (10<sup>31</sup>+) come almost entirely from the upper tail. Once those are discounted, the remaining expected value can turn negative. For GiveWell, whose impact distribution is much tighter, the upper tail barely differs from the median, so discounting it has almost no effect on the score.</p>
-  </div>
+<summary>View the round-by-round allocation</summary>
+<div class="details-content">
+<table>
+<tr><th>Round</th><th>$10M →</th></tr>
+<tr><td>1</td><td>Sentinel Bio</td></tr>
+<tr><td>2</td><td>Nuclear fund (Longview)</td></tr>
+<tr><td>3</td><td>Sentinel Bio</td></tr>
+<tr><td>4</td><td>Nuclear fund (Longview)</td></tr>
+<tr><td>5</td><td>Sentinel Bio</td></tr>
+<tr><td>6</td><td>Nuclear fund (Longview)</td></tr>
+<tr><td>7</td><td>Sentinel Bio</td></tr>
+<tr><td>8</td><td>Sentinel Bio</td></tr>
+<tr><td>9</td><td>Nuclear fund (Longview)</td></tr>
+<tr><td>10</td><td>Sentinel Bio</td></tr>
+</table>
+</div>
+</details>
+
+<div class="alloc-bar">
+  <div class="alloc-segment bar-bio" style="width:60%">Sentinel Bio $60M (60%)</div>
+  <div class="alloc-segment bar-nuc" style="width:40%">Nuclear $40M (40%)</div>
+</div>
+
+<p>After the first $10M, diminishing returns make the biosecurity fund slightly less attractive. The nuclear safety fund, which has a similar base score, starts receiving allocations. The money alternates between the two as each one's marginal value decreases.</p>
+
+</div>
+
+<div class="arrow-down">↓</div>
+
+
+<!-- ═══════════ STEP 3 ═══════════ -->
+<h2>Step 3: Changing the risk profile</h2>
+
+<p>So far, we have used a risk-neutral profile: the model simply takes the expected value of each fund's impact distribution. But what if you are skeptical of the most optimistic scenarios?</p>
+
+<p>The "Continuous Upside Skeptical" risk profile downweights the upper tail of each fund's impact distribution. For global catastrophic risk funds, the upside scenarios are where most of the expected value lives. When you discount those, the picture changes dramatically.</p>
+
+<details>
+<summary>What does "Continuous Upside Skeptical" do, exactly?</summary>
+<div class="details-content">
+<p>We could just say "don't count effects above the 99th percentile." Instead, we use a continuous function that starts dropping off at the 97.5th percentile and decays to zero at the 99.9th percentile, to avoid an arbitrary discontinuous jump in which outcomes are and aren't valued.</p>
+
+<p>Specifically, outcomes up to the 97.5th percentile of the impact distribution receive full weight. Above that, the weight decays exponentially, falling to 1% at the 99th percentile and reaching zero by the 99.9th percentile. The formula for the weight between the 97.5th and 99.9th percentile is:</p>
+
+<div class="formula">weight = e<sup>−ln(100) / 1.5 × (p − 97.5)</sup></div>
+
+<p>The average weight of all values standardizes this weight. In practice, this nearly eliminates the contribution of extremely high-end outcomes while leaving the bulk of the distribution untouched.</p>
+
+<p>For GCR funds, the enormous expected values (10<sup>31</sup>+) come almost entirely from the upper tail. Once those are discounted, the remaining expected value can turn negative. For GiveWell, whose impact distribution is much tighter, the upper tail barely differs from the median, so discounting it has almost no effect on the score.</p>
+</div>
 </details>
 
 <div class="scenario">
-  <span class="scenario-label">Scenario 3</span>
-  <h3>$10M, same moral weights and discounts, but "Continuous Upside Sceptical"</h3>
+<div class="scenario-label">Scenario 3</div>
+<h3>$10M, same moral weights and discounts, but "Continuous Upside Skeptical"</h3>
 
-  <details>
-    <summary>View the changed input</summary>
-    <div>
-      <p>Everything is the same as Scenario 1 except:</p>
-      <table class="inputs">
-        <tr><td>Risk profile</td><td class="num">Continuous Upside Sceptical (7)</td></tr>
-      </table>
-      <p style="margin-top:0.5rem;">This single change flips the sign on the GCR funds. Under this risk profile, the far-future extinction effects become <em>negative</em> (the model interprets the most likely outcome as slightly harmful rather than hugely beneficial). Meanwhile, GiveWell's near-term, evidence-backed effects are largely unaffected.</p>
-    </div>
-  </details>
+<details>
+<summary>View the changed input</summary>
+<div class="details-content">
+<p>Everything is the same as Scenario 1 except:</p>
+<table>
+<tr><td><strong>Risk profile</strong></td><td>Continuous Upside Skeptical (7)</td></tr>
+</table>
+</div>
+</details>
 
-  <div class="result-bar-container">
-    <div class="result-row">
-      <span class="result-label">GiveWell</span>
-      <div class="result-bar-bg"><div class="result-bar bar-givewell" style="width:100%;">$10M</div></div>
-      <span class="result-pct">100%</span>
-    </div>
-  </div>
+<p>This single change flips the sign on the GCR funds. Under this risk profile, the far-future extinction effects become <em>negative</em> (the model interprets the most likely outcome as slightly harmful rather than hugely beneficial). Meanwhile, GiveWell's near-term, evidence-backed effects are largely unaffected.</p>
 
-  <details>
-    <summary>View the fund scores: Neutral vs. Continuous Upside Sceptical</summary>
-    <div>
-      <table class="inputs">
-        <tr><th>Fund</th><th>Neutral</th><th>Upside Sceptical</th></tr>
-        <tr><td>Sentinel Bio</td><td class="num">1.12 &times; 10<sup>31</sup></td><td class="neg">&minus;5.18 &times; 10<sup>29</sup></td></tr>
-        <tr><td>Nuclear fund</td><td class="num">1.11 &times; 10<sup>31</sup></td><td class="neg">&minus;5.21 &times; 10<sup>29</sup></td></tr>
-        <tr><td>AI fund</td><td class="num">1.10 &times; 10<sup>30</sup></td><td class="neg">&minus;2.71 &times; 10<sup>31</sup></td></tr>
-        <tr><td>GiveWell</td><td class="num">20,024</td><td class="num">19,796</td></tr>
-        <tr><td>LEAF</td><td class="num">18,689</td><td class="num">16,994</td></tr>
-      </table>
-      <p class="note" style="margin-top:0.5rem;">Animal welfare funds score zero because this worldview assigns zero weight to animal effects. GiveWell's score barely changes between risk profiles because its impact distribution is tight (the upper tail is close to the median, so discounting it makes little difference).</p>
-    </div>
-  </details>
-
-  <div class="takeaway">A single input change (the risk profile) completely reverses the recommendation. The GCR funds go from the top of the ranking to negative scores. GiveWell, with its well-evidenced near-term effects, becomes the clear winner. This illustrates how sensitive cause prioritization decisions are to assumptions about risk.</div>
+<div class="alloc-bar">
+  <div class="alloc-segment bar-gw" style="width:100%">GiveWell $10M (100%)</div>
 </div>
 
-<div class="transition">&#8595;</div>
+<details>
+<summary>View the fund scores: Neutral vs. Continuous Upside Skeptical</summary>
+<div class="details-content">
+<table>
+<tr><th>Fund</th><th>Neutral</th><th>Upside Skeptical</th></tr>
+<tr><td>Sentinel Bio</td><td>1.12 × 10<sup>31</sup></td><td class="neg">−5.18 × 10<sup>29</sup></td></tr>
+<tr><td>Nuclear fund</td><td>1.11 × 10<sup>31</sup></td><td class="neg">−5.21 × 10<sup>29</sup></td></tr>
+<tr><td>AI fund</td><td>1.10 × 10<sup>30</sup></td><td class="neg">−2.71 × 10<sup>31</sup></td></tr>
+<tr><td>GiveWell</td><td>20,024</td><td><strong>19,796</strong></td></tr>
+<tr><td>LEAF</td><td>18,689</td><td>16,994</td></tr>
+</table>
+<p><em>Animal welfare funds score zero because this worldview assigns zero weight to animal effects. GiveWell's score barely changes between risk profiles because its impact distribution is tight (the upper tail is close to the median, so discounting it makes little difference).</em></p>
+</div>
+</details>
 
+<div class="insight">A single input change (the risk profile) completely reverses the recommendation. The GCR funds go from the top of the ranking to negative scores. GiveWell, with its well-evidenced near-term effects, becomes the clear winner. This illustrates how sensitive cause prioritization decisions are to assumptions about risk.</div>
+</div>
+
+
+<div class="arrow-down">↓</div>
+
+
+<!-- ═══════════ STEP 4 ═══════════ -->
 <h2>Step 4: Merging worldviews</h2>
 
 <p>In practice, you might not be fully committed to either risk profile. Perhaps you think there is an 80% chance the upside-skeptical view is right and a 20% chance the risk-neutral view is right. The model handles this by treating each view as a separate worldview with its own credence.</p>
@@ -248,122 +335,126 @@
 <p>There are different ways to combine these views. We show two aggregation methods here: credence-weighted and Maximize Expected Choiceworthiness (MEC).</p>
 
 <div class="scenario">
-  <span class="scenario-label">Scenario 4a</span>
-  <h3>$10M, credence-weighted aggregation (80% upside skeptical / 20% longtermist)</h3>
+<div class="scenario-label">Scenario 4a</div>
+<h3>$10M, credence-weighted aggregation (80% upside skeptical / 20% longtermist)</h3>
 
-  <details>
-    <summary>View the worldview setup</summary>
-    <div>
-      <table class="inputs">
-        <tr><th>Worldview</th><th>Credence</th><th>Risk Profile</th><th>Other inputs</th></tr>
-        <tr><td>Human-focused longtermist</td><td class="num">20%</td><td class="num">Neutral (0)</td><td>Same as Scenario 1</td></tr>
-        <tr><td>Human-focused, upside skeptical</td><td class="num">80%</td><td class="num">Continuous Upside Sceptical (7)</td><td>Same moral weights &amp; discounts</td></tr>
-      </table>
-    </div>
-  </details>
+<details>
+<summary>View the worldview setup</summary>
+<div class="details-content">
+<table>
+<tr><th>Worldview</th><th>Credence</th><th>Risk Profile</th><th>Other inputs</th></tr>
+<tr><td>Human-focused longtermist</td><td>20%</td><td>Neutral (0)</td><td>Same as Scenario 1</td></tr>
+<tr><td>Human-focused, upside skeptical</td><td>80%</td><td>Continuous Upside Skeptical (7)</td><td>Same moral weights &amp; discounts</td></tr>
+</table>
+</div>
+</details>
 
-  <p>With credence-weighted aggregation, each worldview gets to allocate its share of each $10M increment. At 80/20 credence, the upside-skeptical worldview directs $8M and the longtermist worldview directs $2M.</p>
+<p>With credence-weighted aggregation, each worldview allocates its share of each $10M increment. At 80/20 credence, the upside-skeptical worldview directs $8M, and the longtermist worldview directs $2M.</p>
 
-  <div class="result-bar-container">
-    <div class="result-row">
-      <span class="result-label">GiveWell</span>
-      <div class="result-bar-bg"><div class="result-bar bar-givewell" style="width:80%;">$8M</div></div>
-      <span class="result-pct">80%</span>
-    </div>
-    <div class="result-row">
-      <span class="result-label">Sentinel Bio (Biorisk)</span>
-      <div class="result-bar-bg"><div class="result-bar bar-bio" style="width:20%;">$2M</div></div>
-      <span class="result-pct">20%</span>
-    </div>
-  </div>
+<div class="alloc-bar">
+  <div class="alloc-segment bar-gw" style="width:80%">GiveWell $8M (80%)</div>
+  <div class="alloc-segment bar-bio" style="width:20%">Sentinel Bio $2M (20%)</div>
+</div>
 
-  <div class="takeaway">The budget splits in proportion to the credences. Each worldview picks its own top fund independently.</div>
+<p>The budget splits in proportion to the credences. Each worldview picks its own top fund independently.</p>
 </div>
 
 <div class="scenario">
-  <span class="scenario-label">Scenario 4b</span>
-  <h3>$10M, MEC aggregation (same 80/20 worldviews)</h3>
+<div class="scenario-label">Scenario 4b</div>
+<h3>$10M, MEC aggregation (same 80/20 worldviews)</h3>
 
-  <p>MEC (Maximize Expected Choiceworthiness) works differently. Instead of letting each worldview allocate independently, it computes a single weighted-average score across all worldviews and puts the entire increment into whichever fund scores highest overall.</p>
+<p>MEC (Maximize Expected Choiceworthiness) works differently. Instead of letting each worldview allocate independently, it computes a single weighted-average score across all worldviews and puts the entire increment into whichever fund scores highest overall.</p>
 
-  <div class="result-bar-container">
-    <div class="result-row">
-      <span class="result-label">Sentinel Bio (Biorisk)</span>
-      <div class="result-bar-bg"><div class="result-bar bar-bio" style="width:100%;">$10M</div></div>
-      <span class="result-pct">100%</span>
-    </div>
-  </div>
-
-  <p>Despite holding only 20% credence, the longtermist worldview's scores are so astronomically large (10<sup>31</sup>) that even after multiplying by 0.2, they still overwhelm the skeptical worldview's scores (on the order of 10<sup>4</sup>). The 80% credence on the skeptical side makes no practical difference.</p>
-
-  <div class="takeaway">We do not recommend MEC as a primary aggregation method. It is vulnerable to a form of "fanaticism": a worldview with a small credence but extremely large or uncertain value estimates can overpower all other worldviews in the weighted average. This means a 20% credence on speculative far-future outcomes can completely dominate an 80% credence on well-evidenced near-term interventions. Credence-weighted aggregation avoids this by giving each worldview proportional control rather than mixing their scores.</div>
+<div class="alloc-bar">
+  <div class="alloc-segment bar-bio" style="width:100%">Sentinel Bio $10M (100%)</div>
 </div>
 
-<div class="transition">&#8595;</div>
+<p>Despite holding only 20% credence, the longtermist worldview's scores are so astronomically large (10<sup>31</sup>) that even after multiplying by 0.2, they still overwhelm the skeptical worldview's scores (on the order of 10<sup>4</sup>). The 80% credence on the skeptical side makes no practical difference.</p>
 
-<h2>Step 5: Merging at larger scale</h2>
+<div class="warning">We do not recommend MEC as a primary aggregation method. It is vulnerable to a form of "fanaticism": a worldview with a small credence but extremely large or uncertain value estimates can overpower all other worldviews in the weighted average. In this example, even giving just 5% credence to the longtermist view (rather than 20%) would still result in Sentinel Bio receiving the entire $10M under MEC, because the longtermist scores (~10<sup>31</sup>) are so much larger than the skeptical scores (~10<sup>4</sup>) that they dominate the weighted average at any credence above roughly 4.5%. Credence-weighted aggregation avoids this by giving each worldview proportional control rather than mixing their scores.</div>
+</div>
 
-<p>Now we scale up to $100M with the same 80/20 credence split, using credence-weighted aggregation. Diminishing returns interact with the credence split.</p>
+<div class="arrow-down">↓</div>
+
+
+<!-- ═══════════ STEP 5 ═══════════ -->
+<h2>Step 5: Merging at a larger scale</h2>
+
+<p>Now we scale up to $100M with a 30/70 credence split (30% upside-skeptical, 70% longtermist), using credence-weighted aggregation. Diminishing returns interact with the credence split.</p>
 
 <div class="scenario">
-  <span class="scenario-label">Scenario 5</span>
-  <h3>$100M, credence-weighted, 80% upside skeptical / 20% longtermist</h3>
+<div class="scenario-label">Scenario 5</div>
+<h3>$100M, credence-weighted, 30% upside skeptical / 70% longtermist</h3>
 
-  <details>
-    <summary>View the round-by-round allocation</summary>
-    <div>
-      <div class="rounds">
-        Round 1: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-bio">$2M &rarr; Sentinel Bio</span><br>
-        Round 2: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-bio">$2M &rarr; Sentinel Bio</span><br>
-        Round 3: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-bio">$2M &rarr; Sentinel Bio</span><br>
-        Round 4: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-bio">$2M &rarr; Sentinel Bio</span><br>
-        Round 5: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-bio">$2M &rarr; Sentinel Bio</span><br>
-        Round 6: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-nuclear">$2M &rarr; Nuclear fund</span><br>
-        Round 7: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-nuclear">$2M &rarr; Nuclear fund</span><br>
-        Round 8: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-nuclear">$2M &rarr; Nuclear fund</span><br>
-        Round 9: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-nuclear">$2M &rarr; Nuclear fund</span><br>
-        Round 10: <span class="round-givewell">$8M &rarr; GiveWell</span> + <span class="round-nuclear">$2M &rarr; Nuclear fund</span>
-      </div>
-    </div>
-  </details>
-
-  <div class="result-bar-container">
-    <div class="result-row">
-      <span class="result-label">GiveWell</span>
-      <div class="result-bar-bg"><div class="result-bar bar-givewell" style="width:80%;">$80M</div></div>
-      <span class="result-pct">80%</span>
-    </div>
-    <div class="result-row">
-      <span class="result-label">Sentinel Bio (Biorisk)</span>
-      <div class="result-bar-bg"><div class="result-bar bar-bio" style="width:10%;">$10M</div></div>
-      <span class="result-pct">10%</span>
-    </div>
-    <div class="result-row">
-      <span class="result-label">Nuclear fund (Longview)</span>
-      <div class="result-bar-bg"><div class="result-bar bar-nuclear" style="width:10%;">$10M</div></div>
-      <span class="result-pct">10%</span>
-    </div>
-  </div>
-
-  <div class="takeaway">The upside-skeptical worldview (80% credence) keeps sending all its money to GiveWell, which is still robustly the best option at this scale after accounting for diminishing returns. The longtermist worldview (20% credence) splits its allocation between biosecurity and nuclear as diminishing returns force diversification. The result: a portfolio dominated by near-term giving but with a meaningful longtermist hedge, driven by genuine moral uncertainty rather than arbitrary splitting.</div>
+<div class="alloc-bar">
+  <div class="alloc-segment bar-bio" style="width:40%">Sentinel Bio $40M (40%)</div>
+  <div class="alloc-segment bar-nuc" style="width:30%">Nuclear $30M (30%)</div>
+  <div class="alloc-segment bar-gw" style="width:30%">GiveWell $30M (30%)</div>
 </div>
 
+<p>The longtermist worldview (70% credence) splits its $70M between biosecurity and nuclear safety as diminishing returns force diversification. The upside-skeptical worldview (30% credence) sends all of its $30M to GiveWell, which remains the robustly best option under skeptical assumptions even at scale. The result: a portfolio dominated by GCR giving with a substantial near-term hedge, driven by genuine moral uncertainty rather than arbitrary splitting.</p>
+</div>
+
+
+<!-- ═══════════ STEP 6 ═══════════ -->
+<h2>Step 6: Adding animal welfare weights</h2>
+
+<p>So far, every worldview assigned zero moral weight to animals. Now we include worldviews that value animal welfare. We keep $100M and use credence-weighted aggregation with three worldview groups:</p>
+
+<div class="scenario">
+<div class="scenario-label">Scenario 6</div>
+<h3>$100M, credence-weighted, with animal welfare weights</h3>
+
+<details>
+<summary>View the worldview setup</summary>
+<div class="details-content">
+<table>
+<tr><th>Worldview group</th><th>Credence</th><th>Risk Profile</th><th>Animal weights</th></tr>
+<tr><td>Human-focused longtermist</td><td>45%</td><td>Neutral (0)</td><td>Zero</td></tr>
+<tr><td>Animal welfare advocate</td><td>40%</td><td>Upside Skeptical (7)</td><td>Chickens 0.4, Fish 0.3, Shrimp 0.1, Invertebrates 0.05</td></tr>
+<tr><td>GiveWell-focused, upside skeptical</td><td>15%</td><td>Upside Skeptical (7)</td><td>Zero</td></tr>
+</table>
+</div>
+</details>
+
+<div class="alloc-bar">
+  <div class="alloc-segment bar-aw" style="width:40%">Animal Welfare Funds $40M (40%)</div>
+  <div class="alloc-segment bar-bio" style="width:27%">Sentinel Bio $27M (27%)</div>
+  <div class="alloc-segment bar-nuc" style="width:18%">Nuclear $18M (18%)</div>
+  <div class="alloc-segment bar-gw" style="width:15%">GiveWell $15M (15%)</div>
+</div>
+
+<div class="alloc-legend">
+<span class="legend-item"><span class="legend-dot" style="background:#3498db"></span> Sentinel Bio (27%)</span>
+<span class="legend-item"><span class="legend-dot" style="background:#16a085"></span> Animal Welfare funds (40%)</span>
+<span class="legend-item"><span class="legend-dot" style="background:#e74c3c"></span> Nuclear (18%)</span>
+<span class="legend-item"><span class="legend-dot" style="background:#27ae60"></span> GiveWell (15%)</span>
+</div>
+
+<p>The animal welfare advocate's worldviews (40% total credence) direct their entire share to animal welfare funds. Within that share, cage-free campaigns receive the most ($20M), followed by the EA Animal Welfare Fund ($12M) and other animal welfare programs ($8M). The longtermist worldviews (45%) split between biosecurity and nuclear as before. The GiveWell-focused worldview (15%) sends everything to GiveWell.</p>
+
+<p>The result is a genuinely diversified portfolio spanning all three cause areas: GCR reduction (45%), animal welfare (40%), and near-term human welfare (15%), each driven by the credences assigned to the underlying worldviews.</p>
+</div>
+
+<div class="arrow-down">↓</div>
+
+
+<!-- ═══════════ SUMMARY ═══════════ -->
+<div class="summary-section">
 <h2>Summary</h2>
 
 <p>These scenarios illustrate the core mechanics of the model:</p>
 
-<div class="scenario" style="background:#ebf5fb; border-color:var(--accent);">
+<p><strong>Scoring:</strong> Each fund receives a score based on its modeled effects, multiplied by the worldview's moral weights and discount factors, then collapsed according to the chosen risk profile.</p>
 
-  <p><strong>Scoring:</strong> Each fund gets a score based on its modeled effects, multiplied by the worldview's moral weights and discount factors, then collapsed by the chosen risk profile.</p>
+<p><strong>Diminishing returns:</strong> The model allocates in increments. Each increment goes to whichever fund has the highest <em>marginal</em> value at that point. As a fund receives more, its marginal value declines, eventually allowing other funds to compete.</p>
 
-  <p><strong>Diminishing returns:</strong> The model allocates in increments. Each increment goes to whichever fund has the highest <em>marginal</em> value at that point. As a fund receives more, its marginal value drops, eventually letting other funds compete.</p>
+<p><strong>Risk profiles:</strong> The choice of risk profile can completely change which funds score highest. Risk-neutral views tend to favor GCR funds (whose upside is enormous but uncertain); upside-skeptical views tend to favor GiveWell (whose impact is smaller but more certain).</p>
 
-  <p><strong>Risk profiles:</strong> The choice of risk profile can completely change which funds score highest. Risk-neutral views tend to favor GCR funds (whose upside is enormous but uncertain); upside-skeptical views tend to favor GiveWell (whose impact is smaller but more certain).</p>
-
-  <p><strong>Worldview aggregation:</strong> When you hold multiple worldviews, the aggregation method matters. Credence-weighted aggregation gives each worldview proportional control over the allocation. Other methods like MEC combine scores into a single average, which can allow worldviews with extreme value estimates to dominate even at low credences.</p>
+<p><strong>Worldview aggregation:</strong> When you hold multiple worldviews, the aggregation method matters. Credence-weighted aggregation gives each worldview proportional control over the allocation. Other methods, like MEC, combine scores into a single average, which can allow worldviews with extreme value estimates to dominate even when credences are low.</p>
 </div>
 
-<p class="note">All numbers in this document were generated by the Donor Compass Advanced Mode model using the March 31, 2026 dataset. The primary aggregation method shown is credence-weighted; eight other methods are available and can produce different results when multiple worldviews disagree.</p>
+<p class="footer-note">All numbers in this document were generated by the Donor Compass Advanced Mode model using the March 31, 2026, dataset. The primary aggregation method shown is credence-weighted; eight other methods are available and can produce different results when multiple worldviews disagree.</p>
 
 </body>
 </html>
